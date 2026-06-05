@@ -2,19 +2,19 @@ from rest_framework.permissions import BasePermission
 
 from eventyay.talk_rules.person import is_only_reviewer
 
+
 MODEL_PERMISSION_MAP = {
-    "list": "list",
-    "retrieve": "view",
-    "update": "update",
-    "partial_update": "update",
-    "destroy": "delete",
+    'list': 'list',
+    'retrieve': 'view',
+    'update': 'update',
+    'partial_update': 'update',
+    'destroy': 'delete',
 }
 
 
 class ApiPermission(BasePermission):
-
     def get_permission_object(self, view, obj, request, detail=False):
-        return obj or getattr(request, "event", None) or request.organizer
+        return obj or getattr(request, 'event', None) or request.organizer
 
     def has_permission(self, request, view):
         return self._has_permission(view, None, request)
@@ -30,7 +30,7 @@ class ApiPermission(BasePermission):
         - Does the auth token have access to the endpoint (with the method used)
         - Does the user have the required additional object-level permissions
         """
-        event = getattr(request, "event", None)
+        event = getattr(request, 'event', None)
         if request.auth:
             if event:
                 if event not in request.auth.events.all():
@@ -40,24 +40,20 @@ class ApiPermission(BasePermission):
                     # phase AND no anonymisation is active, as otherwise, we can’t fully
                     # guarantee that we’d accidentally expose speaker names or other
                     # non-anonymised information through ?expand= lookups.
-                    if (
-                        not event.active_review_phase
-                        or not event.active_review_phase.can_see_speaker_names
-                    ):
+                    if not event.active_review_phase or not event.active_review_phase.can_see_speaker_names:
                         return False
-            endpoint = getattr(view, "endpoint", None)
-            if not request.auth.has_endpoint_permission(endpoint, view.action):
-                return False
+            endpoint = getattr(view, 'endpoint', None)
+            if hasattr(request.auth, 'has_endpoint_permission'):
+                if not request.auth.has_endpoint_permission(endpoint, view.action):
+                    return False
 
         if view.detail and not obj:
             # Early out as DRF will check permissions on detail endpoints twice,
             # once without an object passed and once with.
             return True
 
-        permission_object = self.get_permission_object(
-            view, obj, request, detail=view.detail
-        )
-        permission_map = getattr(view, "permission_map", None) or {}
+        permission_object = self.get_permission_object(view, obj, request, detail=view.detail)
+        permission_map = getattr(view, 'permission_map', None) or {}
         permission_required = permission_map.get(view.action)
         if not permission_required:
             model_action = MODEL_PERMISSION_MAP.get(view.action, view.action)
@@ -78,11 +74,11 @@ class PluginPermission(ApiPermission):  # pragma: no cover
         return self._has_permission(view, obj, request)
 
     def _has_permission(self, view, obj, request):
-        event = getattr(request, "event", None)
+        event = getattr(request, 'event', None)
         if not event:
             # Only events can have plugins
             return False
-        plugin_name = getattr(view, "plugin_required", None)
+        plugin_name = getattr(view, 'plugin_required', None)
         if not plugin_name:
             return True
         return plugin_name in event.plugin_list
