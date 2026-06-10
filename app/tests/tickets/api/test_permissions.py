@@ -546,3 +546,33 @@ def test_event_staff_requires_staff_session(user_client, organizer, team, event,
     user.staffsession_set.create(date_start=now(), session_key=user_client.session.session_key)
     resp = user_client.get('/api/v1/organizers/{}/events/{}/{}'.format(organizer.slug, event.slug, url[1]))
     assert resp.status_code == 200
+
+
+def test_api_permission_dummy_auth():
+    """Test ApiPermission does not crash on auth objects lacking a callable has_endpoint_permission."""
+    from unittest.mock import Mock
+    from django.test import RequestFactory
+    from eventyay.api.permissions import ApiPermission
+
+    permission = ApiPermission()
+    request = RequestFactory().get('/api/v1/organizers/')
+    
+    class DummyAuth:
+        pass
+        
+    request.auth = DummyAuth()
+    request.organizer = Mock()
+    request.user = Mock()
+    request.user.has_perm.return_value = True
+    
+    view = Mock()
+    view.detail = False
+    view.action = 'list'
+    view.queryset.model.get_perm.return_value = 'view_model'
+    
+    # Should not crash and should safely return True because get_perm gives view_model
+    assert permission.has_permission(request, view) is True
+
+    # Test with non-callable attribute
+    request.auth.has_endpoint_permission = False
+    assert permission.has_permission(request, view) is True
