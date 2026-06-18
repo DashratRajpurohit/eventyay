@@ -35,8 +35,8 @@ from eventyay.api.serializers.checkin import (
     CheckinRedeemInputSerializer,
     MiniCheckinListSerializer,
 )
-from eventyay.api.serializers.product import QuestionSerializer
 from eventyay.api.serializers.order import CheckinListOrderPositionSerializer
+from eventyay.api.serializers.product import QuestionSerializer
 from eventyay.api.views import RichOrderingFilter
 from eventyay.api.views.order import OrderPositionFilter
 from eventyay.base.i18n import language
@@ -50,7 +50,6 @@ from eventyay.base.models import (
     OrderPosition,
     Question,
     RevokedTicketSecret,
-    TeamAPIToken,
 )
 from eventyay.base.services.checkin import (
     CheckInError,
@@ -60,6 +59,7 @@ from eventyay.base.services.checkin import (
 )
 from eventyay.consts import SizeKey
 from eventyay.helpers.database import FixedOrderBy
+
 
 with scopes_disabled():
 
@@ -361,17 +361,17 @@ def _handle_file_upload(data, user, auth):
             pk=data[len('file:') :],
         )
     except (BaseValidationError, IndexError):  # invalid uuid
-        raise BaseValidationError('The submitted file ID "{fid}" was not found.'.format(fid=data))
+        raise BaseValidationError(f'The submitted file ID "{data}" was not found.')
     except CachedFile.DoesNotExist:
-        raise BaseValidationError('The submitted file ID "{fid}" was not found.'.format(fid=data))
+        raise BaseValidationError(f'The submitted file ID "{data}" was not found.')
 
     allowed_types = ('image/png', 'image/jpeg', 'image/gif', 'application/pdf')
     if cf.type not in allowed_types:
         raise BaseValidationError(
-            'The submitted file "{fid}" has a file type that is not allowed in this field.'.format(fid=data)
+            f'The submitted file "{data}" has a file type that is not allowed in this field.'
         )
     if cf.file.size > settings.FILE_UPLOAD_MAX_SIZE_OTHER:
-        raise BaseValidationError('The submitted file "{fid}" is too large to be used in this field.'.format(fid=data))
+        raise BaseValidationError(f'The submitted file "{data}" is too large to be used in this field.')
 
     return cf.file
 
@@ -1027,18 +1027,18 @@ class CheckinListPositionViewSet(viewsets.ReadOnlyModelViewSet):
                 pk=data[len('file:') :],
             )
         except (BaseValidationError, IndexError):  # invalid uuid
-            raise BaseValidationError('The submitted file ID "{fid}" was not found.'.format(fid=data))
+            raise BaseValidationError(f'The submitted file ID "{data}" was not found.')
         except CachedFile.DoesNotExist:
-            raise BaseValidationError('The submitted file ID "{fid}" was not found.'.format(fid=data))
+            raise BaseValidationError(f'The submitted file ID "{data}" was not found.')
 
         allowed_types = ('image/png', 'image/jpeg', 'image/gif', 'application/pdf')
         if cf.type not in allowed_types:
             raise BaseValidationError(
-                'The submitted file "{fid}" has a file type that is not allowed in this field.'.format(fid=data)
+                f'The submitted file "{data}" has a file type that is not allowed in this field.'
             )
         if cf.file.size > settings.MAX_SIZE_CONFIG[SizeKey.UPLOAD_SIZE_OTHER]:
             raise BaseValidationError(
-                'The submitted file "{fid}" is too large to be used in this field.'.format(fid=data)
+                f'The submitted file "{data}" is too large to be used in this field.'
             )
 
         return cf.file
@@ -1049,9 +1049,9 @@ class CheckinRedeemView(views.APIView):
         auth = self.request.auth
         user = self.request.user
 
-        if isinstance(auth, (TeamAPIToken, Device)):
+        if auth and hasattr(auth, 'get_events_with_permission'):
             events = auth.get_events_with_permission(('can_change_orders', 'can_checkin_orders'))
-        elif user.is_authenticated:
+        elif user and hasattr(user, 'get_events_with_permission') and user.is_authenticated:
             events = user.get_events_with_permission(('can_change_orders', 'can_checkin_orders'), request).filter(
                 organizer=self.request.organizer
             )
@@ -1122,9 +1122,9 @@ class CheckinSearchView(ListAPIView):
         auth = self.request.auth
         user = self.request.user
 
-        if isinstance(auth, (TeamAPIToken, Device)):
+        if auth and hasattr(auth, 'get_events_with_permission'):
             events = auth.get_events_with_permission(('can_view_orders', 'can_checkin_orders'))
-        elif user.is_authenticated:
+        elif user and hasattr(user, 'get_events_with_permission') and user.is_authenticated:
             events = user.get_events_with_permission(('can_view_orders', 'can_checkin_orders'), self.request).filter(
                 organizer=self.request.organizer
             )
@@ -1147,9 +1147,9 @@ class CheckinSearchView(ListAPIView):
         auth = self.request.auth
         user = self.request.user
 
-        if isinstance(auth, (TeamAPIToken, Device)):
+        if auth and hasattr(auth, 'get_events_with_permission'):
             events = auth.get_events_with_permission('can_view_orders')
-        elif user.is_authenticated:
+        elif user and hasattr(user, 'get_events_with_permission') and user.is_authenticated:
             events = user.get_events_with_permission('can_view_orders', self.request).filter(
                 organizer=self.request.organizer
             )

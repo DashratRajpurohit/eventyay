@@ -57,7 +57,7 @@ class ExportersMixin:
         cf = get_object_or_404(CachedFile, id=kwargs['cfid'])
         if cf.file:
             resp = ChunkBasedFileResponse(cf.file.file, content_type=cf.type)
-            resp['Content-Disposition'] = 'attachment; filename="{}"'.format(cf.filename)
+            resp['Content-Disposition'] = f'attachment; filename="{cf.filename}"'
             return resp
         elif not settings.HAS_CELERY:
             return Response(
@@ -136,11 +136,18 @@ class OrganizerExportersViewSet(ExportersMixin, viewsets.ViewSet):
     @cached_property
     def exporters(self):
         exporters = []
-        events = (
-            (self.request.auth or self.request.user)
-            .get_events_with_permission('can_view_orders', request=self.request)
-            .filter(organizer=self.request.organizer)
-        )
+        auth = getattr(self.request, 'auth', None)
+        user = getattr(self.request, 'user', None)
+
+        if auth and hasattr(auth, 'get_events_with_permission'):
+            events = auth.get_events_with_permission('can_view_orders', request=self.request)
+        elif user and hasattr(user, 'get_events_with_permission') and user.is_authenticated:
+            events = user.get_events_with_permission('can_view_orders', request=self.request)
+        else:
+            from eventyay.base.models import Event
+            events = Event.objects.none()
+
+        events = events.filter(organizer=self.request.organizer)
         responses = register_multievent_data_exporters.send(self.request.organizer)
         for ex in sorted(
             [response(events) for r, response in responses if response],
@@ -151,10 +158,19 @@ class OrganizerExportersViewSet(ExportersMixin, viewsets.ViewSet):
         return exporters
 
     def get_serializer_kwargs(self):
+        auth = getattr(self.request, 'auth', None)
+        user = getattr(self.request, 'user', None)
+
+        if auth and hasattr(auth, 'get_events_with_permission'):
+            events = auth.get_events_with_permission('can_view_orders', request=self.request)
+        elif user and hasattr(user, 'get_events_with_permission') and user.is_authenticated:
+            events = user.get_events_with_permission('can_view_orders', request=self.request)
+        else:
+            from eventyay.base.models import Event
+            events = Event.objects.none()
+
         return {
-            'events': self.request.auth.get_events_with_permission('can_view_orders', request=self.request).filter(
-                organizer=self.request.organizer
-            )
+            'events': events.filter(organizer=self.request.organizer)
         }
 
     def do_export(self, cf, instance, data):

@@ -12,6 +12,7 @@ from eventyay.api.auth.device import DeviceTokenAuthentication
 from eventyay.base.models import CheckinList, Device, SubEvent
 from eventyay.base.models.devices import Gate, generate_api_token
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -136,8 +137,13 @@ class EventSelectionView(APIView):
 
     @property
     def base_event_qs(self):
+        from eventyay.base.models import Event
+        auth = getattr(self.request, 'auth', None)
+        if not auth or not hasattr(auth, 'get_events_with_any_permission'):
+            return Event.objects.none()
+
         qs = (
-            self.request.auth.get_events_with_any_permission()
+            auth.get_events_with_any_permission()
             .annotate(
                 first_date=Coalesce('date_admission', 'date_from'),
                 last_date=Coalesce('date_to', 'date_from'),
@@ -145,22 +151,26 @@ class EventSelectionView(APIView):
             .filter(live=True, has_subevents=False)
             .order_by('first_date')
         )
-        if self.request.auth.gate:
-            has_cl = CheckinList.objects.filter(event=OuterRef('pk'), gates__in=[self.request.auth.gate])
+        if getattr(auth, 'gate', None):
+            has_cl = CheckinList.objects.filter(event=OuterRef('pk'), gates__in=[auth.gate])
             qs = qs.annotate(has_cl=Exists(has_cl)).filter(has_cl=True)
         return qs
 
     @property
     def base_subevent_qs(self):
+        auth = getattr(self.request, 'auth', None)
+        if not auth or not hasattr(auth, 'get_events_with_any_permission'):
+            return SubEvent.objects.none()
+
         qs = (
             SubEvent.objects.annotate(
                 first_date=Coalesce('date_admission', 'date_from'),
                 last_date=Coalesce('date_to', 'date_from'),
             )
             .filter(
-                event__organizer=self.request.auth.organizer,
+                event__organizer=auth.organizer,
                 event__live=True,
-                event__in=self.request.auth.get_events_with_any_permission(),
+                event__in=auth.get_events_with_any_permission(),
                 active=True,
             )
             .select_related('event')

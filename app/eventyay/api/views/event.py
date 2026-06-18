@@ -44,7 +44,7 @@ from eventyay.api.serializers.event import (
 from eventyay.api.serializers.rooms import EventSerializer as RoomsEventSerializer
 from eventyay.api.utils import get_protocol
 from eventyay.api.views import ConditionalListView
-from eventyay.base.models import Device, SubEvent, TaxRule, TeamAPIToken, User
+from eventyay.base.models import SubEvent, TaxRule, User
 from eventyay.base.models.event import Event
 from eventyay.base.payment import ManualPayment
 from eventyay.base.services.event import notify_event_change
@@ -112,9 +112,9 @@ class EventViewSet(viewsets.ModelViewSet):
     filterset_class = EventFilter
 
     def get_queryset(self):
-        if isinstance(self.request.auth, (TeamAPIToken, Device)):
+        if hasattr(self.request.auth, 'get_events_with_any_permission'):
             qs = self.request.auth.get_events_with_any_permission()
-        elif self.request.user.is_authenticated:
+        elif hasattr(self.request.user, 'get_events_with_any_permission') and self.request.user.is_authenticated:
             qs = self.request.user.get_events_with_any_permission(self.request)
         else:
             qs = Event.objects.none()
@@ -367,9 +367,9 @@ class SubEventViewSet(ConditionalListView, viewsets.ModelViewSet):
         if getattr(self.request, 'event', None):
             qs = self.request.event.subevents.all()
         else:
-            if isinstance(self.request.auth, (TeamAPIToken, Device)):
+            if hasattr(self.request.auth, 'get_events_with_any_permission'):
                 events_qs = self.request.auth.get_events_with_any_permission()
-            elif self.request.user.is_authenticated:
+            elif hasattr(self.request.user, 'get_events_with_any_permission') and self.request.user.is_authenticated:
                 events_qs = self.request.user.get_events_with_any_permission(self.request)
             else:
                 events_qs = Event.objects.none()
