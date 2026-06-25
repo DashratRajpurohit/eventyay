@@ -33,8 +33,15 @@ class ApiPermission(BasePermission):
         event = getattr(request, "event", None)
         if request.auth:
             if event:
-                if event not in request.auth.events.all():
+                if hasattr(request.auth, "has_event_permission"):
+                    if not request.auth.has_event_permission(event.organizer, event, request=request):
+                        return False
+                elif hasattr(request.auth, "events"):
+                    if event not in request.auth.events.all():
+                        return False
+                else:
                     return False
+
                 if is_only_reviewer(request.user, request.event):
                     # Reviewers can only access the API if there is an active review
                     # phase AND no anonymisation is active, as otherwise, we can’t fully
