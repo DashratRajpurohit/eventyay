@@ -1,6 +1,6 @@
 import pytest
 
-from pretix.base.models import Device
+from eventyay.base.models import Device
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def test_initialize_unknown_token(client, new_device: Device):
             'token': 'aaa',
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '4.0.0',
         },
     )
@@ -45,7 +45,7 @@ def test_initialize_used_token(client, device: Device):
             'token': device.initialization_token,
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '4.0.0',
         },
     )
@@ -61,7 +61,7 @@ def test_initialize_valid_token(client, new_device: Device):
             'token': new_device.initialization_token,
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '4.0.0',
         },
     )
@@ -95,7 +95,7 @@ def test_update_required_auth(client, token_client, device: Device):
         {
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '5.0.0',
         },
     )
@@ -105,7 +105,7 @@ def test_update_required_auth(client, token_client, device: Device):
         {
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '5.0.0',
         },
     )
@@ -119,7 +119,7 @@ def test_update_valid_fields(device_client, device: Device):
         {
             'hardware_brand': 'Samsung',
             'hardware_model': 'Galaxy S',
-            'software_brand': 'pretixdroid',
+            'software_brand': 'eventyaydroid',
             'software_version': '5.0.0',
         },
     )

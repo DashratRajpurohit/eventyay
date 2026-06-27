@@ -1,6 +1,6 @@
 import pytest
 
-from pretix.base.models import Organizer
+from eventyay.base.models import Organizer
 
 
 @pytest.mark.django_db
@@ -81,7 +81,7 @@ def test_device_auth_revoked(client, device):
 @pytest.mark.django_db
 def test_device_auth_security_profile(client, device):
     client.credentials(HTTP_AUTHORIZATION='Device ' + device.api_token)
-    device.security_profile = 'pretixscan'
+    device.security_profile = 'eventyayscan'
     device.save()
     resp = client.get('/api/v1/organizers/dummy/giftcards/')
     assert resp.status_code == 403

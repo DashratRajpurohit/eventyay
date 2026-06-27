@@ -33,8 +33,18 @@ class ApiPermission(BasePermission):
         event = getattr(request, "event", None)
         if request.auth:
             if event:
-                if event not in request.auth.events.all():
+                if hasattr(request.auth, 'has_event_permission'):
+                    if not request.auth.has_event_permission(event.organizer, event, request=request):
+                        return False
+                elif hasattr(request.auth, 'events'):
+                    if event not in request.auth.events.all():
+                        return False
+                elif hasattr(request.auth, 'organizers'):
+                    if not request.auth.organizers.filter(pk=event.organizer.pk).exists():
+                        return False
+                else:
                     return False
+
                 if is_only_reviewer(request.user, request.event):
                     # Reviewers can only access the API if there is an active review
                     # phase AND no anonymisation is active, as otherwise, we can’t fully
@@ -46,8 +56,9 @@ class ApiPermission(BasePermission):
                     ):
                         return False
             endpoint = getattr(view, "endpoint", None)
-            if not request.auth.has_endpoint_permission(endpoint, view.action):
-                return False
+            if hasattr(request.auth, 'has_endpoint_permission'):
+                if not request.auth.has_endpoint_permission(endpoint, view.action):
+                    return False
 
         if view.detail and not obj:
             # Early out as DRF will check permissions on detail endpoints twice,

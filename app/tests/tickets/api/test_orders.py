@@ -12,21 +12,21 @@ from django_countries.fields import Country
 from django_scopes import scope, scopes_disabled
 from pytz import UTC
 
-from pretix.base.models import (
+from eventyay.base.models import (
     InvoiceAddress,
     Order,
     OrderPosition,
     Question,
     SeatingPlan,
 )
-from pretix.base.models.orders import (
+from eventyay.base.models.orders import (
     CartPosition,
     OrderFee,
     OrderPayment,
     OrderRefund,
     QuestionAnswer,
 )
-from pretix.base.services.invoices import (
+from eventyay.base.services.invoices import (
     generate_cancellation,
     generate_invoice,
 )
@@ -90,7 +90,7 @@ def quota(event, item):
 @pytest.fixture
 def order(event, item, taxrule, question):
     testtime = datetime.datetime(2017, 12, 1, 10, 0, 0, tzinfo=UTC)
-    event.plugins += ',pretix.plugins.stripe'
+    event.plugins += ',eventyay.plugins.stripe'
     event.save()
 
     with mock.patch('django.utils.timezone.now') as mock_now:
@@ -4268,12 +4268,12 @@ def test_order_update_allowed_fields(token_client, organizer, event, order):
     assert not order.invoice_address.vat_id_validated
     assert order.invoice_address.city == 'Paris'
     with scopes_disabled():
-        assert order.all_logentries().get(action_type='pretix.event.order.comment')
-        assert order.all_logentries().get(action_type='pretix.event.order.checkin_attention')
-        assert order.all_logentries().get(action_type='pretix.event.order.contact.changed')
-        assert order.all_logentries().get(action_type='pretix.event.order.phone.changed')
-        assert order.all_logentries().get(action_type='pretix.event.order.locale.changed')
-        assert order.all_logentries().get(action_type='pretix.event.order.modified')
+        assert order.all_logentries().get(action_type='eventyay.event.order.comment')
+        assert order.all_logentries().get(action_type='eventyay.event.order.checkin_attention')
+        assert order.all_logentries().get(action_type='eventyay.event.order.contact.changed')
+        assert order.all_logentries().get(action_type='eventyay.event.order.phone.changed')
+        assert order.all_logentries().get(action_type='eventyay.event.order.locale.changed')
+        assert order.all_logentries().get(action_type='eventyay.event.order.modified')
 
 
 @pytest.mark.django_db
@@ -4831,7 +4831,7 @@ def test_position_update(token_client, organizer, event, order, question):
         assert op.state == 'CA'
         assert op.attendee_email == 'foo@example.org'
         le = order.all_logentries().last()
-    assert le.action_type == 'pretix.event.order.modified'
+    assert le.action_type == 'eventyay.event.order.modified'
     assert le.parsed_data == {
         'data': [
             {
