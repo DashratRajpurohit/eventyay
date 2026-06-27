@@ -2,7 +2,7 @@ import pytest
 from django.utils.timezone import now
 from django_scopes import scopes_disabled
 
-from pretix.base.models import Device
+from eventyay.base.models import Device
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def device(organizer, event):
         unique_serial='UOS3GNZ27O39V3QS',
         initialization_token='frkso3m2w58zuw70',
         hardware_model='TC25',
-        software_brand='pretixSCAN',
+        software_brand='eventyaySCAN',
         software_version='1.5.1',
         initialized=now(),
         all_events=False,
@@ -35,7 +35,7 @@ TEST_DEV_RES = {
     'initialized': '2020-09-18T14:17:44.190021Z',
     'hardware_brand': 'Zebra',
     'hardware_model': 'TC25',
-    'software_brand': 'pretixSCAN',
+    'software_brand': 'eventyaySCAN',
     'software_version': '1.5.1',
     'security_profile': 'full',
 }

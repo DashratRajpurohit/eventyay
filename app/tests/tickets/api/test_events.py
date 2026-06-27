@@ -8,15 +8,15 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from django_countries.fields import Country
 from django_scopes import scopes_disabled
-from pretix.base.models import (
+from eventyay.base.models import (
     Event,
     InvoiceAddress,
     Order,
     OrderPosition,
     SeatingPlan,
 )
-from pretix.base.models.orders import OrderFee
-from pretix.testutils.mock import mocker_context
+from eventyay.base.models.orders import OrderFee
+from eventyay.testutils.mock import mocker_context
 from pytz import UTC
 
 
@@ -92,7 +92,7 @@ TEST_EVENT_RES = {
     'seat_category_mapping': {},
     'meta_data': {'type': 'Conference'},
     'timezone': 'Europe/Berlin',
-    'plugins': ['pretix.plugins.banktransfer', 'pretix.plugins.ticketoutputpdf'],
+    'plugins': ['eventyay.plugins.banktransfer', 'eventyay.plugins.ticketoutputpdf'],
     'item_meta_properties': {
         'day': 'Monday',
     },
@@ -167,7 +167,7 @@ def test_event_list_filter(token_client, organizer, event):
 def test_event_get(token_client, organizer, event):
     resp = token_client.get('/api/v1/organizers/{}/events/{}/'.format(organizer.slug, event.slug))
     res = copy.copy(TEST_EVENT_RES)
-    res['valid_keys'] = {'pretix_sig1': []}
+    res['valid_keys'] = {'eventyay_sig1': []}
     assert resp.status_code == 200
     assert res == resp.data
 
@@ -338,7 +338,7 @@ def test_event_create_with_clone(token_client, organizer, event, meta_prop):
             'location': None,
             'slug': '2030',
             'meta_data': {'type': 'Conference'},
-            'plugins': ['pretix.plugins.ticketoutputpdf'],
+            'plugins': ['eventyay.plugins.ticketoutputpdf'],
             'timezone': 'Europe/Vienna',
         },
         format='json',
@@ -347,7 +347,7 @@ def test_event_create_with_clone(token_client, organizer, event, meta_prop):
     assert resp.status_code == 201
     with scopes_disabled():
         cloned_event = Event.objects.get(organizer=organizer.pk, slug='2030')
-        assert cloned_event.plugins == 'pretix.plugins.ticketoutputpdf'
+        assert cloned_event.plugins == 'eventyay.plugins.ticketoutputpdf'
         assert cloned_event.is_public is False
         assert cloned_event.testmode
         assert (
@@ -381,7 +381,7 @@ def test_event_create_with_clone(token_client, organizer, event, meta_prop):
     assert resp.status_code == 201
     with scopes_disabled():
         cloned_event = Event.objects.get(organizer=organizer.pk, slug='2031')
-        assert cloned_event.plugins == 'pretix.plugins.banktransfer,pretix.plugins.ticketoutputpdf'
+        assert cloned_event.plugins == 'eventyay.plugins.banktransfer,eventyay.plugins.ticketoutputpdf'
         assert cloned_event.is_public is True
         assert (
             organizer.events.get(slug='2031')
@@ -622,31 +622,31 @@ def test_event_update_plugins(token_client, organizer, event, free_item, free_qu
         '/api/v1/organizers/{}/events/{}/'.format(organizer.slug, event.slug),
         {
             'plugins': [
-                'pretix.plugins.ticketoutputpdf',
+                'eventyay.plugins.ticketoutputpdf',
             ]
         },
         format='json',
     )
     assert resp.status_code == 200
     assert set(resp.data.get('plugins')) == {
-        'pretix.plugins.ticketoutputpdf',
+        'eventyay.plugins.ticketoutputpdf',
     }
 
     resp = token_client.patch(
         '/api/v1/organizers/{}/events/{}/'.format(organizer.slug, event.slug),
-        {'plugins': {'pretix.plugins.banktransfer'}},
+        {'plugins': {'eventyay.plugins.banktransfer'}},
         format='json',
     )
     assert resp.status_code == 200
-    assert resp.data.get('plugins') == ['pretix.plugins.banktransfer']
+    assert resp.data.get('plugins') == ['eventyay.plugins.banktransfer']
 
     resp = token_client.patch(
         '/api/v1/organizers/{}/events/{}/'.format(organizer.slug, event.slug),
-        {'plugins': {'pretix.plugins.test'}},
+        {'plugins': {'eventyay.plugins.test'}},
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.content.decode() == '{"plugins":["Unknown plugin: \'pretix.plugins.test\'."]}'
+    assert resp.content.decode() == '{"plugins":["Unknown plugin: \'eventyay.plugins.test\'."]}'
 
 
 @pytest.mark.django_db
@@ -973,7 +973,7 @@ def test_get_event_settings(token_client, organizer, event):
 @pytest.mark.django_db
 def test_patch_event_settings(token_client, organizer, event):
     with mocker_context() as mocker:
-        mocked = mocker.patch('pretix.presale.style.regenerate_css.apply_async')
+        mocked = mocker.patch('eventyay.presale.style.regenerate_css.apply_async')
         organizer.settings.imprint_url = 'https://example.org'
         resp = token_client.patch(
             '/api/v1/organizers/{}/events/{}/settings/'.format(organizer.slug, event.slug),
