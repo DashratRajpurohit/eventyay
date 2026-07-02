@@ -8,7 +8,7 @@ from django_countries.fields import Country
 from django_scopes import scopes_disabled
 from pytz import UTC
 
-from pretix.base.models import (
+from eventyay.base.models import (
     CartPosition,
     InvoiceAddress,
     Item,
@@ -22,7 +22,7 @@ from pretix.base.models import (
     QuestionOption,
     Quota,
 )
-from pretix.base.models.orders import OrderFee
+from eventyay.base.models.orders import OrderFee
 
 
 @pytest.fixture
@@ -1771,7 +1771,7 @@ def test_quota_update_closed(token_client, organizer, event, quota, item):
     assert resp.status_code == 200
     with scopes_disabled():
         quota = Quota.objects.get(pk=resp.data['id'])
-    assert quota.all_logentries().filter(action_type='pretix.event.quota.closed').count() == 1
+    assert quota.all_logentries().filter(action_type='eventyay.event.quota.closed').count() == 1
     resp = token_client.patch(
         '/api/v1/organizers/{}/events/{}/quotas/{}/'.format(organizer.slug, event.slug, quota.pk),
         {
@@ -1780,7 +1780,7 @@ def test_quota_update_closed(token_client, organizer, event, quota, item):
         format='json',
     )
     assert resp.status_code == 200
-    assert quota.all_logentries().filter(action_type='pretix.event.quota.opened').count() == 1
+    assert quota.all_logentries().filter(action_type='eventyay.event.quota.opened').count() == 1
 
 
 @pytest.mark.django_db
