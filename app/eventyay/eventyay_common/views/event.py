@@ -44,6 +44,7 @@ from eventyay.base.gmail.errors import (
     GmailTemporaryError,
 )
 from eventyay.base.meetup import (
+    PRIVACY_PRIVATE,
     get_rsvp_product_and_quota,
     get_video_config_initial,
     is_meetup_event,
@@ -512,7 +513,8 @@ class EventCreateView(TemplateView):
             basics_post = legacy_data.get('basics')
             if not basics_post:
                 return redirect(request.path)
-            basics_form = EventWizardBasicsForm(
+            basics_form_class = MeetupEventWizardBasicsForm if self.is_meetup_request else EventWizardBasicsForm
+            basics_form = basics_form_class(
                 data=basics_post,
                 initial=self.get_basics_initial(foundation_form.cleaned_data),
                 prefix='basics',
@@ -645,6 +647,7 @@ class EventCreateView(TemplateView):
                 except (OverflowError, ValueError, TypeError):
                     crop_box = None
 
+                is_private = basics_data.get('privacy_type') == PRIVACY_PRIVATE
                 provision_meetup_event(
                     event,
                     video_type=basics_data.get('video_type', ''),
@@ -658,6 +661,7 @@ class EventCreateView(TemplateView):
                     payment_stripe_publishable_key=basics_data.get('payment_stripe_publishable_key', ''),
                     payment_stripe_secret_key=basics_data.get('payment_stripe_secret_key', ''),
                     payment_stripe_merchant_country=basics_data.get('payment_stripe_merchant_country', ''),
+                    is_private=is_private,
                 )
 
         return redirect(
